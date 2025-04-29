@@ -17,15 +17,13 @@ slot_duration = 0.5  # hours
 num_slots = 12  # 10 PM to 4 AM
 start_hour = 22  # Start time
 max_demand = 900  # Increased from 400 kW to allow more simultaneous charging
-
-# Add these constants after other parameters
 BATTERY_RANGE_KM = 253  # km
 EARLIEST_ARRIVAL_TIME = "21:00"
 LATEST_ARRIVAL_TIME = "23:50"
 EARLIEST_DEPARTURE_TIME = "04:00"
 LATEST_DEPARTURE_TIME = "08:00"
 
-# Add after parameters section
+# CONTINUOUS_CHARGING
 CONTINUOUS_CHARGING = True  # Set to False to allow breaks
 
 def random_time(start_str, end_str):
@@ -55,7 +53,7 @@ for i in range(num_buses):
     departure_time = random_time(EARLIEST_DEPARTURE_TIME, LATEST_DEPARTURE_TIME)
     energy_needed = battery_capacity * (1 - initial_soc)
     
-    # Improved schedule assignment (robust)
+    # Improved schedule assignment
     slot_found = False
     for t in range(num_slots):
         slot_time = get_slot_time(t, start_hour)
