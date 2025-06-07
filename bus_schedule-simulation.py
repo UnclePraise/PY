@@ -11,14 +11,12 @@ num_buses = 20
 battery_capacity = 230  # kWh
 min_initial_soc = 0.25
 max_initial_soc = 0.4
-charging_power_full = 90  # kW
-# charging_power_taper = 30  # kW
+charging_power_full = 100  # kW
+charging_power_taper = 30  # kW
 slot_duration = 0.5  # hours
 num_slots = 12  # 10 PM to 4 AM
 start_hour = 22  # Start time
 max_demand = 900  # Increased from 400 kW to allow more simultaneous charging
-
-# Add these constants after other parameters
 BATTERY_RANGE_KM = 253  # km
 EARLIEST_ARRIVAL_TIME = "21:00"
 LATEST_ARRIVAL_TIME = "23:50"
@@ -112,7 +110,7 @@ charging_power = pulp.LpVariable.dicts(
     lowBound=0, upBound=charging_power_full, cat='Continuous'
 )
 
-# Objective: minimize total energy used 
+# Objective: minimize total energy used (or just set to 0 if you only care about feasibility)
 model += pulp.lpSum(
     charging_power[bus['id'], t] * slot_duration
     for bus in buses for t in range(bus['schedule'], num_slots)
@@ -200,21 +198,6 @@ for bus in buses:
             demand[t] += actual_power
         soc += actual_power * slot_duration
         soc_matrix.at[bus['id'], t] = soc / battery_capacity
-
-# Table: kW consumed by each bus per schedule (time slot) + total
-power_consumed_df = pd.DataFrame(0.0, index=[bus['id'] for bus in buses], columns=[f"Slot {t}" for t in range(num_slots)])
-
-for bus in buses:
-    for t in range(bus['schedule'], num_slots):
-        power = pulp.value(charging_power[bus['id'], t])
-        if power is not None and power > 1e-3:
-            power_consumed_df.at[bus['id'], f"Slot {t}"] = power
-
-# Add a 'Total' column for each bus
-power_consumed_df['Total (kW)'] = power_consumed_df.sum(axis=1)
-
-print("\n=== kW Consumed by Each Bus per Schedule (Time Slot) ===")
-print(power_consumed_df.round(2).to_string())
 
 # Print max demand
 print("Maximum Demand per Schedule:")
