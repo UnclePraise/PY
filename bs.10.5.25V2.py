@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 
+#sample of a commit
+
 # PARAMETERS
 n_buses = 20
 battery_capacity = 230  # kWh
