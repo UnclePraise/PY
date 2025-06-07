@@ -1,7 +1,5 @@
-#This code is a simulation of a bus charging optimization problem using linear programming that helps the user 
-# find the optimal charging schedule for a fleet of buses while minimizing peak demand and ensuring that all buses are 
-# charged within a specified time window. 
-# while also figuring out the optimum demand charge capacity. try multiple seeds for randomization
+# This code allows for the optimization of bus charging schedules using linear programming, 
+# allowing the user input their specific demand charge and shows how the charging schedule will be optimised.
 
 import random
 import pulp as pl
@@ -10,12 +8,12 @@ import matplotlib.patches as mpatches
 import numpy as np
 
 # PARAMETERS
-n_buses = 40
+n_buses = 20
 battery_capacity = 230  # kWh
 charging_window = 12  # from 10pm to 4am (half-hour slots)
 slot_duration = 0.5  # hours
 max_rate_per_bus = 60  # kW
-min_rate_per_bus = 30  # kW
+min_rate_per_bus = 20  # kW
 
 CONTINUOUS_CHARGING = True
 MAX_DEMAND = 700
@@ -25,15 +23,31 @@ energy_needed = [(1 - soc) * battery_capacity for soc in arrival_soc]
 
 time_labels = [f"{10 + t//2}:{'00' if t % 2 == 0 else '30'} PM" if t < 4 else f"{(t-4)//2}:{'00' if t % 2 == 0 else '30'} AM" for t in range(charging_window)]
 
-model = pl.LpProblem("Bus_Charging_Optimization", pl.LpMinimize)
+def tapered_max_power(soc):
+    if soc < 0.8:
+        return max_rate_per_bus
+    else:
+        return max_rate_per_bus * np.exp(-10 * (soc - 0.8))
+
+tapered_power_bounds = {}
+for i in range(n_buses):
+    soc = arrival_soc[i]
+    for t in range(charging_window):
+        if t == 0:
+            est_soc = soc
+        else:
+            est_soc += (min_rate_per_bus * slot_duration) / battery_capacity
+            est_soc = min(est_soc, 1.0)
+        pmax = tapered_max_power(est_soc)
+        tapered_power_bounds[(i, t)] = pmax
 
 # DECISION VARIABLES
 x = pl.LpVariable.dicts("x", ((i, t) for i in range(n_buses) for t in range(charging_window)), cat="Binary")
 p = pl.LpVariable.dicts("p", ((i, t) for i in range(n_buses) for t in range(charging_window)), lowBound=0)
-peak_demand = pl.LpVariable("peak_demand", lowBound=0)
 
-# OBJECTIVE: Minimize the peak demand
-model += peak_demand
+# OBJECTIVE: Minimize total energy delivered
+model = pl.LpProblem("Bus_Charging_Optimization", pl.LpMinimize)
+model += pl.lpSum(p[i, t] for i in range(n_buses) for t in range(charging_window))
 
 # CONSTRAINT 1: Each bus can only start charging from slot 0
 # (all buses can start at slot 0, so no constraint needed)
@@ -41,16 +55,16 @@ model += peak_demand
 # CONSTRAINT 2: Link power to charging status
 for i in range(n_buses):
     for t in range(charging_window):
-        model += p[i, t] <= max_rate_per_bus * x[i, t]
+        model += p[i, t] <= tapered_power_bounds[(i, t)] * x[i, t]
         model += p[i, t] >= min_rate_per_bus * x[i, t]
 
 # CONSTRAINT 3: Energy requirement must be met
 for i in range(n_buses):
     model += pl.lpSum(p[i, t] * slot_duration for t in range(charging_window)) >= energy_needed[i]
 
-# CONSTRAINT 4: Peak demand constraint for each slot
+# CONSTRAINT 4: Hard maximum demand constraint
 for t in range(charging_window):
-    model += pl.lpSum(p[i, t] for i in range(n_buses)) <= peak_demand
+    model += pl.lpSum(p[i, t] for i in range(n_buses)) <= MAX_DEMAND
 
 # CONSTRAINT 5: Continuous charging (if enabled)
 if CONTINUOUS_CHARGING:
@@ -162,7 +176,7 @@ for i in range(n_buses):
 
 # Plot Gantt Chart for Bus Charging Schedule
 bus_colors = plt.cm.tab20(np.linspace(0, 1, n_buses))
-plt.figure(figsize=(14,8))
+plt.figure(figsize=(14, 8))
 for i in range(n_buses):
     charging_slots = [t for t in range(charging_window) if x[i, t].varValue == 1]
     if charging_slots:
@@ -210,3 +224,4 @@ if n_buses <= 20:
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small', ncol=2)
 plt.tight_layout()
 plt.show()
+
