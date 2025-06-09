@@ -15,7 +15,7 @@ battery_capacity = 230  # kWh
 charging_window = 12  # from 10pm to 4am (half-hour slots)
 slot_duration = 0.5  # hours
 max_rate_per_bus = 60  # kW
-min_rate_per_bus = 30  # kW
+min_rate_per_bus = 20  # kW
 
 CONTINUOUS_CHARGING = True
 MAX_DEMAND = 700
@@ -35,30 +35,28 @@ peak_demand = pl.LpVariable("peak_demand", lowBound=0)
 # OBJECTIVE: Minimize the peak demand
 model += peak_demand
 
-# CONSTRAINT 1: Each bus can only start charging from slot 0
-# (all buses can start at slot 0, so no constraint needed)
 
-# CONSTRAINT 2: Link power to charging status
+# CONSTRAINT 1: Link power to charging status
 for i in range(n_buses):
     for t in range(charging_window):
         model += p[i, t] <= max_rate_per_bus * x[i, t]
         model += p[i, t] >= min_rate_per_bus * x[i, t]
 
-# CONSTRAINT 3: Energy requirement must be met
+# CONSTRAINT 2: Energy requirement must be met
 for i in range(n_buses):
     model += pl.lpSum(p[i, t] * slot_duration for t in range(charging_window)) >= energy_needed[i]
 
-# CONSTRAINT 4: Peak demand constraint for each slot
+# CONSTRAINT 3: Peak demand constraint for each slot
 for t in range(charging_window):
     model += pl.lpSum(p[i, t] for i in range(n_buses)) <= peak_demand
 
-# CONSTRAINT 5: Continuous charging (if enabled)
+# CONSTRAINT 4: Continuous charging (if enabled)
 if CONTINUOUS_CHARGING:
     for i in range(n_buses):
         for t in range(charging_window - 1):
             model += x[i, t] >= x[i, t + 1]
 
-# CONSTRAINT 6: Prevent SoC from exceeding 100%
+# CONSTRAINT 5: Prevent SoC from exceeding 100%
 for i in range(n_buses):
     soc = arrival_soc[i]
     for t in range(charging_window):

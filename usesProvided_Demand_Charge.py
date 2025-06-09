@@ -49,30 +49,27 @@ p = pl.LpVariable.dicts("p", ((i, t) for i in range(n_buses) for t in range(char
 model = pl.LpProblem("Bus_Charging_Optimization", pl.LpMinimize)
 model += pl.lpSum(p[i, t] for i in range(n_buses) for t in range(charging_window))
 
-# CONSTRAINT 1: Each bus can only start charging from slot 0
-# (all buses can start at slot 0, so no constraint needed)
-
-# CONSTRAINT 2: Link power to charging status
+# CONSTRAINT 1: Link power to charging status
 for i in range(n_buses):
     for t in range(charging_window):
         model += p[i, t] <= tapered_power_bounds[(i, t)] * x[i, t]
         model += p[i, t] >= min_rate_per_bus * x[i, t]
 
-# CONSTRAINT 3: Energy requirement must be met
+# CONSTRAINT 2: Energy requirement must be met
 for i in range(n_buses):
     model += pl.lpSum(p[i, t] * slot_duration for t in range(charging_window)) >= energy_needed[i]
 
-# CONSTRAINT 4: Hard maximum demand constraint
+# CONSTRAINT 3: Hard maximum demand constraint
 for t in range(charging_window):
     model += pl.lpSum(p[i, t] for i in range(n_buses)) <= MAX_DEMAND
 
-# CONSTRAINT 5: Continuous charging (if enabled)
+# CONSTRAINT 4: Continuous charging (if enabled)
 if CONTINUOUS_CHARGING:
     for i in range(n_buses):
         for t in range(charging_window - 1):
             model += x[i, t] >= x[i, t + 1]
 
-# CONSTRAINT 6: Prevent SoC from exceeding 100%
+# CONSTRAINT 5: Prevent SoC from exceeding 100%
 for i in range(n_buses):
     soc = arrival_soc[i]
     for t in range(charging_window):
