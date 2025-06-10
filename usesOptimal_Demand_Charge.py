@@ -10,7 +10,7 @@ import matplotlib.patches as mpatches
 import numpy as np
 
 # PARAMETERS
-n_buses = 20
+n_buses = 10
 battery_capacity = 230  # kWh
 charging_window = 12  # from 10pm to 4am (half-hour slots)
 slot_duration = 0.5  # hours
@@ -71,6 +71,7 @@ for i in range(n_buses):
 # SOLVE
 solver = pl.PULP_CBC_CMD(msg=True)
 model.solve(solver)
+
 
 # OUTPUTS
 print(f"Status: {pl.LpStatus[model.status]}")
@@ -207,4 +208,115 @@ plt.grid(True, linestyle='--', alpha=0.7)
 if n_buses <= 20:
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small', ncol=2)
 plt.tight_layout()
-plt.show()
+# plt.show()
+
+# --- 2-Stage Charging Simulation Function ---
+def simulate_2stage_charging(power_profile, battery_capacity, slot_duration, initial_soc=0.25, cc_fraction=0.8, 
+                             lambda_min=0.1, lambda_max=20.0, max_iterations=100, tolerance=0.005):
+    n_slots = len(power_profile)
+    soc = initial_soc
+    soc_list = [soc * 100]
+    energy_cc = 0
+    t_cc = 0
+
+    # Stage 1: CC phase (charge at assigned power per slot until SoC reaches 80%)
+    for t in range(n_slots):
+        if soc < cc_fraction:
+            energy = power_profile[t] * slot_duration
+            soc += energy / battery_capacity
+            soc = min(soc, cc_fraction)
+            energy_cc += energy
+            soc_list.append(soc * 100)
+            t_cc = t + 1
+        else:
+            break
+
+    # If battery is full in CC phase, fill rest with last value
+    if soc >= 1.0 or t_cc >= n_slots:
+        soc_list += [soc_list[-1]] * (n_slots - len(soc_list) + 1)
+        return soc_list[:n_slots+1], power_profile, t_cc, None
+
+    # Stage 2: CV phase (exponential decay)
+    energy_needed_cv = battery_capacity * (1.0 - soc)
+    cc_power = power_profile[t_cc-1] if t_cc > 0 else power_profile[0]
+    total_cv_time = (n_slots - t_cc) * slot_duration
+
+    # Bisection method to find lambda
+    lambda_low = lambda_min
+    lambda_high = lambda_max
+    lambda_current = (lambda_low + lambda_high) / 2
+    iteration = 0
+
+    while iteration < max_iterations:
+        cv_energies = []
+        for i in range(n_slots - t_cc):
+            t_hr = i * slot_duration
+            power = cc_power * np.exp(-lambda_current * t_hr)
+            cv_energies.append(power * slot_duration)
+        total_cv_energy = sum(cv_energies)
+        diff = total_cv_energy - energy_needed_cv
+
+        if abs(diff) <= tolerance:
+            break
+        elif diff > 0:
+            lambda_low = lambda_current
+        else:
+            lambda_high = lambda_current
+        lambda_current = (lambda_low + lambda_high) / 2
+        iteration += 1
+
+    # Build full power and soc profile
+    power_list = power_profile[:t_cc]
+    soc_now = soc
+    for i in range(n_slots - t_cc):
+        t_hr = i * slot_duration
+        power = cc_power * np.exp(-lambda_current * t_hr)
+        energy = power * slot_duration
+        soc_now += energy / battery_capacity
+        soc_now = min(soc_now, 1.0)
+        power_list.append(power)
+        soc_list.append(soc_now * 100)
+
+    # Pad if needed
+    if len(soc_list) < n_slots + 1:
+        soc_list += [soc_list[-1]] * (n_slots + 1 - len(soc_list))
+    if len(power_list) < n_slots:
+        power_list += [0] * (n_slots - len(power_list))
+
+    return soc_list[:n_slots+1], power_list, t_cc, lambda_current
+
+# --- Calculate SoC matrix for all buses using 2-stage charging ---
+soc_matrix_2stage = np.zeros((n_buses, charging_window+1))
+for i in range(n_buses):
+    power_profile = [p[i, t].varValue if p[i, t].varValue is not None else 0 for t in range(charging_window)]
+    soc_list, _, _, _ = simulate_2stage_charging(
+        power_profile, battery_capacity, slot_duration, initial_soc=arrival_soc[i]
+    )
+    soc_matrix_2stage[i, :] = soc_list
+
+# --- Plot SoC progression for all buses (2-stage charging) ---
+# plt.figure(figsize=(12, 6))
+# for i in range(n_buses):
+#     plt.plot(range(charging_window+1), soc_matrix_2stage[i], marker='o', label=f'Bus {i+1}' if n_buses <= 10 else None)
+# plt.xlabel("Time Slot")
+# plt.ylabel("State of Charge (%)")
+# plt.title("SoC Progression Over Time for Each Bus (2-Stage Charging)")
+# plt.xticks(range(charging_window+1), time_labels + ["End"], rotation=45)
+# plt.grid(True, linestyle='--', alpha=0.7)
+# if n_buses <= 10:
+#     plt.legend()
+# plt.tight_layout()
+# plt.show()
+
+# Plot SoC progression for each bus separately (2-stage charging)
+for i in range(n_buses):
+    plt.figure(figsize=(8, 4))
+    plt.plot(range(charging_window+1), soc_matrix_2stage[i], marker='o', color='tab:blue')
+    plt.xlabel("Time Slot")
+    plt.ylabel("State of Charge (%)")
+    plt.title(f"SoC Progression for Bus {i+1} (2-Stage Charging)")
+    plt.xticks(range(charging_window+1), time_labels + ["End"], rotation=45)
+    plt.ylim(0, 105)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.show()
