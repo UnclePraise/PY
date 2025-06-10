@@ -245,3 +245,4 @@ plt.tight_layout()
 plt.show()
 
 print([p[random_bus, t].varValue for t in range(charging_window)])
+
