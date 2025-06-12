@@ -19,7 +19,7 @@ for seed in seeds_to_test:
     random.seed(seed)
 
     # PARAMETERS
-    n_buses = 1
+    n_buses = 10
     battery_capacity = 230  # kWh
     charging_window = 12  # from 10pm to 4am (half-hour slots)
     slot_duration = 0.5  # hours

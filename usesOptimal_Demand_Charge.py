@@ -295,28 +295,28 @@ for i in range(n_buses):
     soc_matrix_2stage[i, :] = soc_list
 
 # --- Plot SoC progression for all buses (2-stage charging) ---
-# plt.figure(figsize=(12, 6))
-# for i in range(n_buses):
-#     plt.plot(range(charging_window+1), soc_matrix_2stage[i], marker='o', label=f'Bus {i+1}' if n_buses <= 10 else None)
-# plt.xlabel("Time Slot")
-# plt.ylabel("State of Charge (%)")
-# plt.title("SoC Progression Over Time for Each Bus (2-Stage Charging)")
-# plt.xticks(range(charging_window+1), time_labels + ["End"], rotation=45)
-# plt.grid(True, linestyle='--', alpha=0.7)
-# if n_buses <= 10:
-#     plt.legend()
-# plt.tight_layout()
-# plt.show()
+plt.figure(figsize=(12, 6))
+for i in range(n_buses):
+    plt.plot(range(charging_window+1), soc_matrix_2stage[i], marker='o', label=f'Bus {i+1}' if n_buses <= 10 else None)
+plt.xlabel("Time Slot")
+plt.ylabel("State of Charge (%)")
+plt.title("SoC Progression Over Time for Each Bus (2-Stage Charging)")
+plt.xticks(range(charging_window+1), time_labels + ["End"], rotation=45)
+plt.grid(True, linestyle='--', alpha=0.7)
+if n_buses <= 10:
+    plt.legend()
+plt.tight_layout()
+plt.show()
 
 # Plot SoC progression for each bus separately (2-stage charging)
-for i in range(n_buses):
-    plt.figure(figsize=(8, 4))
-    plt.plot(range(charging_window+1), soc_matrix_2stage[i], marker='o', color='tab:blue')
-    plt.xlabel("Time Slot")
-    plt.ylabel("State of Charge (%)")
-    plt.title(f"SoC Progression for Bus {i+1} (2-Stage Charging)")
-    plt.xticks(range(charging_window+1), time_labels + ["End"], rotation=45)
-    plt.ylim(0, 105)
-    plt.grid(True, linestyle='--', alpha=0.7)
-    plt.tight_layout()
-    plt.show()
+# for i in range(n_buses):
+#     plt.figure(figsize=(8, 4))
+#     plt.plot(range(charging_window+1), soc_matrix_2stage[i], marker='o', color='tab:blue')
+#     plt.xlabel("Time Slot")
+#     plt.ylabel("State of Charge (%)")
+#     plt.title(f"SoC Progression for Bus {i+1} (2-Stage Charging)")
+#     plt.xticks(range(charging_window+1), time_labels + ["End"], rotation=45)
+#     plt.ylim(0, 105)
+#     plt.grid(True, linestyle='--', alpha=0.7)
+#     plt.tight_layout()
+#     plt.show()
