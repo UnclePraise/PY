@@ -1,1 +1,0 @@
-print("Praise is ansum")

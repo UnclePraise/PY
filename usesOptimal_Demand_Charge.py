@@ -10,7 +10,7 @@ import matplotlib.patches as mpatches
 import numpy as np
 
 # PARAMETERS
-n_buses = 10
+n_buses = 20
 battery_capacity = 230  # kWh
 charging_window = 12  # from 10pm to 4am (half-hour slots)
 slot_duration = 0.5  # hours
@@ -18,7 +18,7 @@ max_rate_per_bus = 60  # kW
 min_rate_per_bus = 20  # kW
 
 CONTINUOUS_CHARGING = True
-MAX_DEMAND = 700
+MAX_DEMAND = 7000
 
 arrival_soc = [random.uniform(0.25, 0.4) for _ in range(n_buses)]
 energy_needed = [(1 - soc) * battery_capacity for soc in arrival_soc]
@@ -309,14 +309,14 @@ plt.tight_layout()
 plt.show()
 
 # Plot SoC progression for each bus separately (2-stage charging)
-# for i in range(n_buses):
-#     plt.figure(figsize=(8, 4))
-#     plt.plot(range(charging_window+1), soc_matrix_2stage[i], marker='o', color='tab:blue')
-#     plt.xlabel("Time Slot")
-#     plt.ylabel("State of Charge (%)")
-#     plt.title(f"SoC Progression for Bus {i+1} (2-Stage Charging)")
-#     plt.xticks(range(charging_window+1), time_labels + ["End"], rotation=45)
-#     plt.ylim(0, 105)
-#     plt.grid(True, linestyle='--', alpha=0.7)
-#     plt.tight_layout()
-#     plt.show()
+for i in range(n_buses):
+    plt.figure(figsize=(8, 4))
+    plt.plot(range(charging_window+1), soc_matrix_2stage[i], marker='o', color='tab:blue')
+    plt.xlabel("Time Slot")
+    plt.ylabel("State of Charge (%)")
+    plt.title(f"SoC Progression for Bus {i+1} (2-Stage Charging)")
+    plt.xticks(range(charging_window+1), time_labels + ["End"], rotation=45)
+    plt.ylim(0, 105)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.show()

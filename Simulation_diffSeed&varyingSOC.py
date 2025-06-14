@@ -6,8 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Define SoC ranges as (lower, upper) tuples
-soc_ranges = [(0.20, 0.25), (0.20, 0.30), (0.25, 0.35), (0.25, 0.40), (0.05, 0.35)]
-range_labels = [ "20-25%", "20-30%", "25-35%" ,"25-40%" , "5-35%"]  # Labels for the x-axis
+soc_ranges = [(0.30, 0.40), (0.25, 0.45), (0.2, 0.50), (0.15, 0.55)]
+# soc_ranges = [(0.20, 0.30), (0.25, 0.35), (0.30, 0.40), (0.35, 0.45)] 
+# soc_ranges = [(0.20, 0.25), (0.20, 0.30), (0.25, 0.35), (0.25, 0.40), (0.05, 0.35)]
+range_labels = [ "30-30%", "25-45%", "20-50%" ,"15-55%" ]  # Labels for the x-axis
 
 n_buses = 10
 battery_capacity = 230  # kWh
