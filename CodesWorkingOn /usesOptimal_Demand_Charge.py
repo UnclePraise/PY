@@ -11,7 +11,7 @@ import numpy as np
 import math
 
 # PARAMETERS
-n_buses = 20
+n_buses = 10
 battery_capacity = 230  # kWh
 charging_window = 12  # from 10pm to 4am (half-hour slots)
 slot_duration = 0.5  # hours
@@ -19,7 +19,7 @@ max_rate_per_bus = 60  # kW
 min_rate_per_bus = 30  # kW
 
 CONTINUOUS_CHARGING = True
-MAX_DEMAND = 7000
+MAX_DEMAND = 700
 
 arrival_soc = [random.uniform(0.25, 0.4) for _ in range(n_buses)]
 energy_needed = [(1 - soc) * battery_capacity for soc in arrival_soc]

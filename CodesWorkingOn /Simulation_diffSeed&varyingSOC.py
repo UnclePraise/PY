@@ -5,9 +5,12 @@ import pulp as pl
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Define SoC ranges as (lower, upper) tuples
-soc_ranges = [(0.20, 0.25), (0.20, 0.30), (0.25, 0.35), (0.25, 0.40), (0.05, 0.35)]
-range_labels = [ "20-25%", "20-30%", "25-35%" ,"25-40%" , "5-35%"]  # Labels for the x-axis
+# Define all three SoC range scenarios and their labels
+soc_cases = [
+    ([(0.30, 0.40), (0.25, 0.45), (0.20, 0.50), (0.15, 0.55)], ["30-40%", "25-45%", "20-50%", "15-55%"], "Increasing earliest arrival SOC and widening SOC range"),
+    ([(0.20, 0.30), (0.25, 0.35), (0.30, 0.40), (0.35, 0.45)], ["20-30%", "25-35%", "30-40%", "35-45%"], "Increasing earliest arrival SOC and fixed SOC range"),
+    ([(0.20, 0.25), (0.20, 0.30), (0.20, 0.40), (0.20, 0.45)], ["20-25%", "20-30%", "20-40%", "20-45%"], "Fixed earliest arrival SOC and increasing SOC range"),
+]
 
 n_buses = 10
 battery_capacity = 230  # kWh
